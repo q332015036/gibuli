@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>吉卜力风格艺术工坊</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes cloudFloat {
+            0% { transform: translateX(-10%); }
+            50% { transform: translateX(10%); }
+            100% { transform: translateX(-10%); }
+        }
+        .cloud-bg {
+            animation: cloudFloat 15s infinite linear;
+            background-image: url('https://placehold.co/1200x300/ABD3F5/FFF?text=Whimsical+Clouds&font=arial');
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.05));
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+        <!-- 顶部云朵装饰 -->
+        <div class="cloud-bg h-48 -mt-8 mb-12 rounded-full opacity-30"></div>
+        
+        <!-- 主卡片 -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border-2 border-indigo-50">
+            <h1 class="text-3xl font-bold text-sky-800 mb-6 flex items-center">
+                <svg class="w-8 h-8 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+                魔法绘笔工作室
+            </h1>
+            
+            <!-- 双栏布局 -->
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- 左侧输入区 -->
+                <div class="space-y-6">
+                    <!-- 图片上传 -->
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            上传参考图（最多3张）
+                        </label>
+                        <div class="flex gap-2 mb-2">
+                            <input type="file" id="imageUpload" multiple 
+                                   class="hidden" accept="image/*">
+                            <label for="imageUpload" 
+                                   class="flex-1 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg 
+                                          cursor-pointer hover:bg-indigo-100 transition-colors">
+                                选择文件
+                            </label>
+                        </div>
+                        <div id="imagePreviews" class="grid grid-cols-3 gap-2"></div>
+                    </div>
+
+                    <!-- 提示词输入 -->
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            画面描述（中英文均可）
+                        </label>
+                        <textarea id="promptInput" rows="4"
+                                  class="w-full px-3 py-2 border rounded-lg focus:ring-2 
+                                         focus:ring-sky-500 focus:border-sky-500"
+                                  placeholder="例：宁静的森林深处，发光的精灵在古树上起舞..."></textarea>
+                    </div>
+                </div>
+
+                <!-- 右侧控制区 -->
+                <div class="space-y-6">
+                    <!-- 风格选择 -->
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            吉卜力风格选项
+                        </label>
+                        <select class="w-full px-3 py-2 border rounded-lg bg-white">
+                            <option value="totoro">龙猫 - 田园幻想风</option>
+                            <option value="castle">哈尔的移动城堡 - 蒸汽朋克</option>
+                            <option value="spirited">千与千寻 - 奇幻水彩</option>
+                        </select>
+                    </div>
+
+                    <!-- 生成控制 -->
+                    <div class="bg-amber-50 p-4 rounded-lg border border-amber-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-sm font-medium text-amber-900">高级设置</span>
+                            <button class="text-amber-700 hover:text-amber-900 text-sm">
+                                显示专家选项
+                            </button>
+                        </div>
+                        <button id="generateBtn" onclick="mockGenerateArt()" 
+                                class="w-full bg-gradient-to-r from-sky-500 to-emerald-500 
+                                       text-white px-6 py-3 rounded-lg font-semibold
+                                       hover:opacity-90 transition-opacity">
+                            立即生成魔法画卷
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结果展示区 -->
+        <div id="outputSection" class="mt-8 grid grid-cols-2 gap-4 hidden">
+            <div class="bg-white p-4 rounded-xl shadow">
+                <h3 class="text-sm font-semibold text-gray-600 mb-2">输入综合分析</h3>
+                <div id="analysisResult" class="text-gray-500 text-sm"></div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow">
+                <h3 class="text-sm font-semibold text-gray-600 mb-2">生成结果</h3>
+                <div id="generatedImages" class="grid gap-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 图片预览处理
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const previewContainer = document.getElementById('imagePreviews');
+            previewContainer.innerHTML = '';
+            
+            Array.from(e.target.files).slice(0,3).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = document.createElement('img');
+                    img.src = event.target.result;
+                    img.className = 'w-full h-24 object-cover rounded border';
+                    previewContainer.appendChild(img);
+                }
+                reader.readAsDataURL(file);
+            });
+        });
+
+        // 模拟生成逻辑
+        function mockGenerateArt() {
+            document.getElementById('outputSection').classList.remove('hidden');
+            const prompt = document.getElementById('promptInput').value;
+            
+            // 显示分析结果
+            document.getElementById('analysisResult').innerHTML = `
+                <p>关键词提取：<span class="text-sky-600">${extractKeywords(prompt)}</span></p >
+                <p class="mt-2">风格融合：吉卜力水彩风 × 中国水墨笔触</p >
+            `;
+
+            // 显示模拟结果
+            const gallery = document.getElementById('generatedImages');
+            gallery.innerHTML = Array(2).fill().map((_,i) => `
+                <div class="bg-gray-100 p-2 rounded-lg">
+                    < img src="https://placehold.co/600x400/DFECF5/1F2937?text=Preview+${i+1}&font=arial" 
+                         class="w-full h-48 object-cover rounded">
+                    <div class="mt-2 text-xs text-gray-500">版本 ${i+1}</div>
+                </div>
+            `).join('');
+        }
+
+        // 辅助函数：提取关键词
+        function extractKeywords(text) {
+            return text.match(/[\u4e00-\u9fa5]+|[A-Za-z]+/g)?.slice(0,5).join(' · ') || '无有效关键词';
+        }
+    </script>
+</body>
+</html>
